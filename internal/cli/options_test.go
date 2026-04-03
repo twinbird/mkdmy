@@ -173,8 +173,8 @@ func TestPrintUsageIncludesKeyLines(t *testing.T) {
 	PrintUsage(&buf)
 
 	for _, want := range []string{
-		"mkdmy - ダミーファイルを作成するコマンド",
-		"生成対象の種類。text, image, dir (required)",
+		"mkdmy - Generate dummy files and directories",
+		"Output kind: text, image, dir (required)",
 		"mkdmy -type text -n 1",
 		"mkdmy -type image -count 3 -name 'img-%02d.png' -mode random",
 	} {
