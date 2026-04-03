@@ -63,10 +63,10 @@ func TestGenerateTextTemplateExactSize(t *testing.T) {
 	}
 }
 
-func TestGenerateImageProducesPNG(t *testing.T) {
+func TestGeneratePNGProducesPNG(t *testing.T) {
 	tmpDir := t.TempDir()
 	opts := cli.Options{
-		Type:        cli.KindImage,
+		Type:        cli.KindPNG,
 		Count:       1,
 		Name:        "image-%02d.png",
 		SizeBytes:   6000,
@@ -243,10 +243,10 @@ func TestGenerateCreatesNestedOutputDirectory(t *testing.T) {
 	}
 }
 
-func TestGenerateImageRejectsUnsupportedMode(t *testing.T) {
+func TestGeneratePNGRejectsUnsupportedMode(t *testing.T) {
 	tmpDir := t.TempDir()
 	opts := cli.Options{
-		Type:        cli.KindImage,
+		Type:        cli.KindPNG,
 		Count:       1,
 		Name:        "image-%02d.png",
 		SizeBytes:   2000,
@@ -258,15 +258,15 @@ func TestGenerateImageRejectsUnsupportedMode(t *testing.T) {
 	if err == nil {
 		t.Fatal("Generate() error = nil, want error")
 	}
-	if !strings.Contains(err.Error(), `unsupported image mode "lorem"`) {
+	if !strings.Contains(err.Error(), `unsupported png mode "lorem"`) {
 		t.Fatalf("Generate() error = %q", err)
 	}
 }
 
-func TestGenerateImageTinySizeStillProducesPNG(t *testing.T) {
+func TestGeneratePNGTinySizeStillProducesPNG(t *testing.T) {
 	tmpDir := t.TempDir()
 	opts := cli.Options{
-		Type:        cli.KindImage,
+		Type:        cli.KindPNG,
 		Count:       1,
 		Name:        "tiny-%02d.png",
 		SizeBytes:   1,

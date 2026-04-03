@@ -14,7 +14,7 @@ import (
 
 func createImageFile(path string, opts cli.Options) error {
 	if opts.ContentMode != cli.ContentModeRandom {
-		return fmt.Errorf("unsupported image mode %q", opts.ContentMode)
+		return fmt.Errorf("unsupported png mode %q", opts.ContentMode)
 	}
 
 	if err := ensureParentDir(path); err != nil {

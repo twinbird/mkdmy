@@ -46,7 +46,7 @@ func TestParseRejectsDirSize(t *testing.T) {
 }
 
 func TestParseRejectsImageLorem(t *testing.T) {
-	_, _, err := Parse([]string{"-type", "image", "-n", "1", "-mode", "lorem"})
+	_, _, err := Parse([]string{"-type", "png", "-n", "1", "-mode", "lorem"})
 	if err == nil {
 		t.Fatal("Parse() error = nil, want error")
 	}
@@ -101,9 +101,9 @@ func TestParseRejectsInvalidInputs(t *testing.T) {
 			wantErr: "content options cannot be used when -type=dir",
 		},
 		{
-			name:    "image with content option",
-			args:    []string{"-type", "image", "-n", "1", "-content", "dummy", "-mode", "random"},
-			wantErr: "-content cannot be used when -type=image",
+			name:    "png with content option",
+			args:    []string{"-type", "png", "-n", "1", "-content", "dummy", "-mode", "random"},
+			wantErr: "-content cannot be used when -type=png",
 		},
 		{
 			name:    "unexpected positional args",
@@ -174,9 +174,9 @@ func TestPrintUsageIncludesKeyLines(t *testing.T) {
 
 	for _, want := range []string{
 		"mkdmy - Generate dummy files and directories",
-		"Output kind: text, image, dir (required)",
+		"Output kind: text, png, dir (required)",
 		"mkdmy -type text -n 1",
-		"mkdmy -type image -count 3 -name 'img-%02d.png' -mode random",
+		"mkdmy -type png -count 3 -name 'img-%02d.png' -mode random",
 	} {
 		if !strings.Contains(buf.String(), want) {
 			t.Fatalf("PrintUsage() missing %q", want)

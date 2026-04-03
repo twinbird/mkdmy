@@ -27,9 +27,9 @@ func Generate(opts cli.Options) error {
 			if err := createTextFile(path, opts, index); err != nil {
 				return fmt.Errorf("generate text %q: %w", path, err)
 			}
-		case cli.KindImage:
+		case cli.KindPNG:
 			if err := createImageFile(path, opts); err != nil {
-				return fmt.Errorf("generate image %q: %w", path, err)
+				return fmt.Errorf("generate png %q: %w", path, err)
 			}
 		default:
 			return fmt.Errorf("unsupported type %q", opts.Type)

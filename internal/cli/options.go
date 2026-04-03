@@ -16,7 +16,7 @@ type FileKind string
 const (
 	KindUnknown   FileKind = ""
 	KindText      FileKind = "text"
-	KindImage     FileKind = "image"
+	KindPNG       FileKind = "png"
 	KindDirectory FileKind = "dir"
 )
 
@@ -29,14 +29,14 @@ func (k *FileKind) String() string {
 
 func (k *FileKind) Set(value string) error {
 	switch normalized := strings.ToLower(strings.TrimSpace(value)); normalized {
-	case string(KindText), string(KindImage), string(KindDirectory):
+	case string(KindText), string(KindPNG), string(KindDirectory):
 		*k = FileKind(normalized)
 		return nil
 	case "directory":
 		*k = KindDirectory
 		return nil
 	default:
-		return fmt.Errorf("invalid -type %q: must be one of text, image, dir", value)
+		return fmt.Errorf("invalid -type %q: must be one of text, png, dir", value)
 	}
 }
 
@@ -102,7 +102,7 @@ func Parse(args []string) (Options, bool, error) {
 	fs.SetOutput(io.Discard)
 	fs.Usage = func() {}
 
-	fs.Var(&opts.Type, "type", "output kind: text, image, dir")
+	fs.Var(&opts.Type, "type", "output kind: text, png, dir")
 	fs.Var(&size, "size", "size per generated item, e.g. 512, 4KB, 10MiB")
 	fs.IntVar(&opts.Count, "count", 0, "number of files or directories to create")
 	fs.IntVar(&opts.Count, "n", 0, "alias of -count")
@@ -158,12 +158,12 @@ func validateOptions(opts *Options, visited map[string]bool) error {
 		}
 	}
 
-	if opts.Type == KindImage {
+	if opts.Type == KindPNG {
 		if visited["content"] || visited["c"] {
-			return errors.New("-content cannot be used when -type=image")
+			return errors.New("-content cannot be used when -type=png")
 		}
 		if opts.ContentMode != ContentModeRandom {
-			return errors.New("-type=image only supports -mode=random")
+			return errors.New("-type=png only supports -mode=random")
 		}
 	}
 
@@ -194,7 +194,7 @@ func applyDefaults(opts *Options, visited map[string]bool) {
 	switch opts.Type {
 	case KindText:
 		opts.Name = "text-%03d.txt"
-	case KindImage:
+	case KindPNG:
 		opts.Name = "image-%03d.png"
 	case KindDirectory:
 		opts.Name = "dir-%03d"
@@ -220,20 +220,20 @@ func PrintUsage(w io.Writer) {
 	fmt.Fprintf(w, "  %s [options]\n\n", commandName())
 	fmt.Fprintln(w, "Options:")
 	fmt.Fprintln(w, "  -type string")
-	fmt.Fprintln(w, "        Output kind: text, image, dir (required)")
+	fmt.Fprintln(w, "        Output kind: text, png, dir (required)")
 	fmt.Fprintln(w, "  -size value")
 	fmt.Fprintln(w, "        Size per generated item. Accepts bytes or units like 4KB, 10MiB")
-	fmt.Fprintln(w, "        Default by type: text=1KB, image=256KB")
+	fmt.Fprintln(w, "        Default by type: text=1KB, png=256KB")
 	fmt.Fprintln(w, "  -count int")
 	fmt.Fprintln(w, "        Number of files or directories to create (required)")
 	fmt.Fprintln(w, "  -n int")
 	fmt.Fprintln(w, "        Alias for -count")
 	fmt.Fprintln(w, "  -name string")
 	fmt.Fprintln(w, "        Name template. fmt.Sprintf-style numbering is supported")
-	fmt.Fprintln(w, "        Default by type: text=text-%03d.txt, image=image-%03d.png, dir=dir-%03d")
+	fmt.Fprintln(w, "        Default by type: text=text-%03d.txt, png=image-%03d.png, dir=dir-%03d")
 	fmt.Fprintln(w, "  -mode string")
 	fmt.Fprintln(w, "        Content mode: template, random, lorem")
-	fmt.Fprintln(w, "        Default by type: text=lorem, image=random")
+	fmt.Fprintln(w, "        Default by type: text=lorem, png=random")
 	fmt.Fprintln(w, "  -m string")
 	fmt.Fprintln(w, "        Alias for -mode")
 	fmt.Fprintln(w, "  -content string")
@@ -246,7 +246,7 @@ func PrintUsage(w io.Writer) {
 	fmt.Fprintln(w, "Examples:")
 	fmt.Fprintf(w, "  %s -type text -n 1\n", commandName())
 	fmt.Fprintf(w, "  %s -type text -n 10 -size 4KB -name 'note-%%03d.txt' -mode lorem\n", commandName())
-	fmt.Fprintf(w, "  %s -type image -count 3 -name 'img-%%02d.png' -mode random\n", commandName())
+	fmt.Fprintf(w, "  %s -type png -count 3 -name 'img-%%02d.png' -mode random\n", commandName())
 	fmt.Fprintf(w, "  %s -type text -n 3 -name 'memo-%%02d.txt' -content 'dummy-%%02d'\n", commandName())
 	fmt.Fprintf(w, "  %s -type dir -count 5 -name 'batch-%%02d'\n", commandName())
 }
@@ -314,7 +314,7 @@ func defaultContentModeForType(kind FileKind) ContentMode {
 	switch kind {
 	case KindText:
 		return ContentModeLorem
-	case KindImage:
+	case KindPNG:
 		return ContentModeRandom
 	default:
 		return ContentModeUnset
@@ -325,7 +325,7 @@ func defaultSizeForType(kind FileKind) int64 {
 	switch kind {
 	case KindText:
 		return 1000
-	case KindImage:
+	case KindPNG:
 		return 256 * 1000
 	default:
 		return 0

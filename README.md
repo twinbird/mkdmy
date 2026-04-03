@@ -1,11 +1,11 @@
 # mkdmy
 
-`mkdmy` is a small CLI for generating dummy text files, PNG images, and directories.
+`mkdmy` is a small CLI for generating dummy text files, PNG files, and directories.
 
 ## Features
 
 - Generate text files with exact byte sizes
-- Generate random PNG images near a target size
+- Generate random PNG files near a target size
 - Generate directories in bulk
 - Use sequential names with `fmt.Sprintf`-style templates
 
@@ -35,20 +35,20 @@ Usage:
 
 Options:
   -type string
-        Output kind: text, image, dir (required)
+        Output kind: text, png, dir (required)
   -size value
         Size per generated item. Accepts bytes or units like 4KB, 10MiB
-        Default by type: text=1KB, image=256KB
+        Default by type: text=1KB, png=256KB
   -count int
         Number of files or directories to create (required)
   -n int
         Alias for -count
   -name string
         Name template. fmt.Sprintf-style numbering is supported
-        Default by type: text=text-%03d.txt, image=image-%03d.png, dir=dir-%03d
+        Default by type: text=text-%03d.txt, png=image-%03d.png, dir=dir-%03d
   -mode string
         Content mode: template, random, lorem
-        Default by type: text=lorem, image=random
+        Default by type: text=lorem, png=random
   -m string
         Alias for -mode
   -content string
@@ -73,10 +73,10 @@ Create ten 4KB lorem text files:
 mkdmy -type text -n 10 -size 4KB -name 'note-%03d.txt' -mode lorem
 ```
 
-Create three random PNG images:
+Create three random PNG files:
 
 ```bash
-mkdmy -type image -count 3 -name 'img-%02d.png' -mode random
+mkdmy -type png -count 3 -name 'img-%02d.png' -mode random
 ```
 
 Create template-based text files:
@@ -94,5 +94,5 @@ mkdmy -type dir -count 5 -name 'batch-%02d'
 ## Notes
 
 - `-size` is not available for `-type=dir`
-- `-type=image` supports only `-mode=random`
+- `-type=png` supports only `-mode=random`
 - `-content` requires `-mode=template`, and setting `-content` enables template mode automatically
