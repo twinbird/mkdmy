@@ -28,7 +28,7 @@ func Generate(opts cli.Options) error {
 				return fmt.Errorf("generate text %q: %w", path, err)
 			}
 		case cli.KindPNG:
-			if err := createImageFile(path, opts); err != nil {
+			if err := createImageFile(path, opts, index); err != nil {
 				return fmt.Errorf("generate png %q: %w", path, err)
 			}
 		default:

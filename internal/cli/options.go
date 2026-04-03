@@ -46,6 +46,7 @@ const (
 	ContentModeUnset    ContentMode = ""
 	ContentModeTemplate ContentMode = "template"
 	ContentModeRandom   ContentMode = "random"
+	ContentModeIndex    ContentMode = "index"
 	ContentModeLorem    ContentMode = "lorem"
 )
 
@@ -58,11 +59,11 @@ func (m *ContentMode) String() string {
 
 func (m *ContentMode) Set(value string) error {
 	switch normalized := strings.ToLower(strings.TrimSpace(value)); normalized {
-	case string(ContentModeTemplate), string(ContentModeRandom), string(ContentModeLorem):
+	case string(ContentModeTemplate), string(ContentModeRandom), string(ContentModeIndex), string(ContentModeLorem):
 		*m = ContentMode(normalized)
 		return nil
 	default:
-		return fmt.Errorf("invalid -mode %q: must be one of template, random, lorem", value)
+		return fmt.Errorf("invalid -mode %q: must be one of template, random, index, lorem", value)
 	}
 }
 
@@ -107,7 +108,7 @@ func Parse(args []string) (Options, bool, error) {
 	fs.IntVar(&opts.Count, "count", 0, "number of files or directories to create")
 	fs.IntVar(&opts.Count, "n", 0, "alias of -count")
 	fs.StringVar(&opts.Name, "name", "", "name template; fmt.Sprintf style numbering is supported")
-	fs.Var(&opts.ContentMode, "mode", "content mode: template, random, lorem")
+	fs.Var(&opts.ContentMode, "mode", "content mode: template, random, index, lorem")
 	fs.Var(&opts.ContentMode, "m", "alias of -mode")
 	fs.StringVar(&opts.Content, "content", "", "content string used when -mode=template")
 	fs.StringVar(&opts.Content, "c", "", "alias of -content")
@@ -162,8 +163,8 @@ func validateOptions(opts *Options, visited map[string]bool) error {
 		if visited["content"] || visited["c"] {
 			return errors.New("-content cannot be used when -type=png")
 		}
-		if opts.ContentMode != ContentModeRandom {
-			return errors.New("-type=png only supports -mode=random")
+		if opts.ContentMode != ContentModeRandom && opts.ContentMode != ContentModeIndex {
+			return errors.New("-type=png only supports -mode=random or -mode=index")
 		}
 	}
 
@@ -232,8 +233,8 @@ func PrintUsage(w io.Writer) {
 	fmt.Fprintln(w, "        Name template. fmt.Sprintf-style numbering is supported")
 	fmt.Fprintln(w, "        Default by type: text=text-%03d.txt, png=image-%03d.png, dir=dir-%03d")
 	fmt.Fprintln(w, "  -mode string")
-	fmt.Fprintln(w, "        Content mode: template, random, lorem")
-	fmt.Fprintln(w, "        Default by type: text=lorem, png=random")
+	fmt.Fprintln(w, "        Content mode: template, random, index, lorem")
+	fmt.Fprintln(w, "        Default by type: text=lorem, png=index")
 	fmt.Fprintln(w, "  -m string")
 	fmt.Fprintln(w, "        Alias for -mode")
 	fmt.Fprintln(w, "  -content string")
@@ -246,7 +247,7 @@ func PrintUsage(w io.Writer) {
 	fmt.Fprintln(w, "Examples:")
 	fmt.Fprintf(w, "  %s -type text -n 1\n", commandName())
 	fmt.Fprintf(w, "  %s -type text -n 10 -size 4KB -name 'note-%%03d.txt' -mode lorem\n", commandName())
-	fmt.Fprintf(w, "  %s -type png -count 3 -name 'img-%%02d.png' -mode random\n", commandName())
+	fmt.Fprintf(w, "  %s -type png -count 3 -name 'img-%%02d.png' -mode index\n", commandName())
 	fmt.Fprintf(w, "  %s -type text -n 3 -name 'memo-%%02d.txt' -content 'dummy-%%02d'\n", commandName())
 	fmt.Fprintf(w, "  %s -type dir -count 5 -name 'batch-%%02d'\n", commandName())
 }
@@ -315,7 +316,7 @@ func defaultContentModeForType(kind FileKind) ContentMode {
 	case KindText:
 		return ContentModeLorem
 	case KindPNG:
-		return ContentModeRandom
+		return ContentModeIndex
 	default:
 		return ContentModeUnset
 	}

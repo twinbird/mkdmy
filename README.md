@@ -5,7 +5,7 @@
 ## Features
 
 - Generate text files with exact byte sizes
-- Generate random PNG files near a target size
+- Generate PNG files with centered sequential labels
 - Generate directories in bulk
 - Use sequential names with `fmt.Sprintf`-style templates
 
@@ -47,8 +47,8 @@ Options:
         Name template. fmt.Sprintf-style numbering is supported
         Default by type: text=text-%03d.txt, png=image-%03d.png, dir=dir-%03d
   -mode string
-        Content mode: template, random, lorem
-        Default by type: text=lorem, png=random
+        Content mode: template, random, index, lorem
+        Default by type: text=lorem, png=index
   -m string
         Alias for -mode
   -content string
@@ -73,10 +73,10 @@ Create ten 4KB lorem text files:
 mkdmy -type text -n 10 -size 4KB -name 'note-%03d.txt' -mode lorem
 ```
 
-Create three random PNG files:
+Create three labeled PNG files:
 
 ```bash
-mkdmy -type png -count 3 -name 'img-%02d.png' -mode random
+mkdmy -type png -count 3 -name 'img-%02d.png' -mode index
 ```
 
 Create template-based text files:
@@ -94,5 +94,5 @@ mkdmy -type dir -count 5 -name 'batch-%02d'
 ## Notes
 
 - `-size` is not available for `-type=dir`
-- `-type=png` supports only `-mode=random`
+- `-type=png` supports `-mode=index` and `-mode=random`
 - `-content` requires `-mode=template`, and setting `-content` enables template mode automatically

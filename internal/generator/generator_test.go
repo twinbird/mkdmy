@@ -70,7 +70,7 @@ func TestGeneratePNGProducesPNG(t *testing.T) {
 		Count:       1,
 		Name:        "image-%02d.png",
 		SizeBytes:   6000,
-		ContentMode: cli.ContentModeRandom,
+		ContentMode: cli.ContentModeIndex,
 		OutputDir:   tmpDir,
 	}
 
@@ -263,6 +263,35 @@ func TestGeneratePNGRejectsUnsupportedMode(t *testing.T) {
 	}
 }
 
+func TestGeneratePNGIndexModeUsesSequentialLabels(t *testing.T) {
+	tmpDir := t.TempDir()
+	opts := cli.Options{
+		Type:        cli.KindPNG,
+		Count:       2,
+		Name:        "image-%02d.png",
+		SizeBytes:   6000,
+		ContentMode: cli.ContentModeIndex,
+		OutputDir:   tmpDir,
+	}
+
+	if err := Generate(opts); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	first, err := os.ReadFile(filepath.Join(tmpDir, "image-01.png"))
+	if err != nil {
+		t.Fatalf("ReadFile(first) error = %v", err)
+	}
+	second, err := os.ReadFile(filepath.Join(tmpDir, "image-02.png"))
+	if err != nil {
+		t.Fatalf("ReadFile(second) error = %v", err)
+	}
+
+	if bytes.Equal(first, second) {
+		t.Fatal("generated PNG files are identical, want different sequential labels")
+	}
+}
+
 func TestGeneratePNGTinySizeStillProducesPNG(t *testing.T) {
 	tmpDir := t.TempDir()
 	opts := cli.Options{
@@ -270,7 +299,7 @@ func TestGeneratePNGTinySizeStillProducesPNG(t *testing.T) {
 		Count:       1,
 		Name:        "tiny-%02d.png",
 		SizeBytes:   1,
-		ContentMode: cli.ContentModeRandom,
+		ContentMode: cli.ContentModeIndex,
 		OutputDir:   tmpDir,
 	}
 

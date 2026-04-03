@@ -28,6 +28,28 @@ func TestParseAppliesDefaultsForText(t *testing.T) {
 	}
 }
 
+func TestParseAppliesDefaultsForPNG(t *testing.T) {
+	opts, helpRequested, err := Parse([]string{"-type", "png", "-n", "1"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if helpRequested {
+		t.Fatal("helpRequested = true, want false")
+	}
+	if opts.Type != KindPNG {
+		t.Fatalf("Type = %q, want %q", opts.Type, KindPNG)
+	}
+	if opts.Name != "image-%03d.png" {
+		t.Fatalf("Name = %q", opts.Name)
+	}
+	if opts.SizeBytes != 256000 {
+		t.Fatalf("SizeBytes = %d, want 256000", opts.SizeBytes)
+	}
+	if opts.ContentMode != ContentModeIndex {
+		t.Fatalf("ContentMode = %q, want %q", opts.ContentMode, ContentModeIndex)
+	}
+}
+
 func TestParseAutoSetsTemplateMode(t *testing.T) {
 	opts, _, err := Parse([]string{"-type", "text", "-n", "1", "-content", "dummy-%02d"})
 	if err != nil {
@@ -176,7 +198,7 @@ func TestPrintUsageIncludesKeyLines(t *testing.T) {
 		"mkdmy - Generate dummy files and directories",
 		"Output kind: text, png, dir (required)",
 		"mkdmy -type text -n 1",
-		"mkdmy -type png -count 3 -name 'img-%02d.png' -mode random",
+		"mkdmy -type png -count 3 -name 'img-%02d.png' -mode index",
 	} {
 		if !strings.Contains(buf.String(), want) {
 			t.Fatalf("PrintUsage() missing %q", want)
