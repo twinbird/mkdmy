@@ -158,14 +158,6 @@ func validateOptions(opts *Options, visited map[string]bool) error {
 		}
 	}
 
-	if opts.Content != "" && opts.ContentMode != ContentModeTemplate {
-		return errors.New("-content requires -mode=template")
-	}
-
-	if opts.ContentMode == ContentModeTemplate && strings.TrimSpace(opts.Content) == "" {
-		return errors.New("-content is required when -mode=template")
-	}
-
 	if opts.Type == KindImage {
 		if visited["content"] || visited["c"] {
 			return errors.New("-content cannot be used when -type=image")
@@ -173,6 +165,14 @@ func validateOptions(opts *Options, visited map[string]bool) error {
 		if opts.ContentMode != ContentModeRandom {
 			return errors.New("-type=image only supports -mode=random")
 		}
+	}
+
+	if opts.Content != "" && opts.ContentMode != ContentModeTemplate {
+		return errors.New("-content requires -mode=template")
+	}
+
+	if opts.ContentMode == ContentModeTemplate && strings.TrimSpace(opts.Content) == "" {
+		return errors.New("-content is required when -mode=template")
 	}
 
 	return nil
