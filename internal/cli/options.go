@@ -1,66 +1,65 @@
-package main
+package cli
 
 import (
 	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 )
 
 const appName = "mkdmy"
 
-type fileKind string
+type FileKind string
 
 const (
-	kindUnknown   fileKind = ""
-	kindText      fileKind = "text"
-	kindImage     fileKind = "image"
-	kindDirectory fileKind = "dir"
+	KindUnknown   FileKind = ""
+	KindText      FileKind = "text"
+	KindImage     FileKind = "image"
+	KindDirectory FileKind = "dir"
 )
 
-func (k *fileKind) String() string {
+func (k *FileKind) String() string {
 	if k == nil {
 		return ""
 	}
 	return string(*k)
 }
 
-func (k *fileKind) Set(value string) error {
+func (k *FileKind) Set(value string) error {
 	switch normalized := strings.ToLower(strings.TrimSpace(value)); normalized {
-	case string(kindText), string(kindImage), string(kindDirectory):
-		*k = fileKind(normalized)
+	case string(KindText), string(KindImage), string(KindDirectory):
+		*k = FileKind(normalized)
 		return nil
 	case "directory":
-		*k = kindDirectory
+		*k = KindDirectory
 		return nil
 	default:
 		return fmt.Errorf("invalid -type %q: must be one of text, image, dir", value)
 	}
 }
 
-type contentMode string
+type ContentMode string
 
 const (
-	contentModeUnset    contentMode = ""
-	contentModeTemplate contentMode = "template"
-	contentModeRandom   contentMode = "random"
-	contentModeLorem    contentMode = "lorem"
+	ContentModeUnset    ContentMode = ""
+	ContentModeTemplate ContentMode = "template"
+	ContentModeRandom   ContentMode = "random"
+	ContentModeLorem    ContentMode = "lorem"
 )
 
-func (m *contentMode) String() string {
+func (m *ContentMode) String() string {
 	if m == nil {
 		return ""
 	}
 	return string(*m)
 }
 
-func (m *contentMode) Set(value string) error {
+func (m *ContentMode) Set(value string) error {
 	switch normalized := strings.ToLower(strings.TrimSpace(value)); normalized {
-	case string(contentModeTemplate), string(contentModeRandom), string(contentModeLorem):
-		*m = contentMode(normalized)
+	case string(ContentModeTemplate), string(ContentModeRandom), string(ContentModeLorem):
+		*m = ContentMode(normalized)
 		return nil
 	default:
 		return fmt.Errorf("invalid -mode %q: must be one of template, random, lorem", value)
@@ -85,35 +84,18 @@ func (s *byteSize) Set(value string) error {
 	return nil
 }
 
-type options struct {
-	Type        fileKind    `json:"type,omitempty"`
+type Options struct {
+	Type        FileKind    `json:"type,omitempty"`
 	SizeBytes   int64       `json:"sizeBytes,omitempty"`
 	Count       int         `json:"count"`
 	Name        string      `json:"name"`
-	ContentMode contentMode `json:"contentMode,omitempty"`
+	ContentMode ContentMode `json:"contentMode,omitempty"`
 	Content     string      `json:"content,omitempty"`
 	OutputDir   string      `json:"outputDir"`
 }
 
-func main() {
-	opts, helpRequested, err := parseOptions(os.Args[1:])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n\n", err)
-		printUsage(os.Stderr)
-		os.Exit(2)
-	}
-
-	if helpRequested {
-		printUsage(os.Stdout)
-		return
-	}
-
-	fmt.Println("option parsing is implemented; generation is not implemented yet.")
-	fmt.Printf("parsed options: %+v\n", opts)
-}
-
-func parseOptions(args []string) (options, bool, error) {
-	var opts options
+func Parse(args []string) (Options, bool, error) {
+	var opts Options
 	var size byteSize
 
 	fs := flag.NewFlagSet(commandName(), flag.ContinueOnError)
@@ -133,13 +115,13 @@ func parseOptions(args []string) (options, bool, error) {
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
-			return options{}, true, nil
+			return Options{}, true, nil
 		}
-		return options{}, false, err
+		return Options{}, false, err
 	}
 
 	if fs.NArg() > 0 {
-		return options{}, false, fmt.Errorf("unexpected positional arguments: %s", strings.Join(fs.Args(), " "))
+		return Options{}, false, fmt.Errorf("unexpected positional arguments: %s", strings.Join(fs.Args(), " "))
 	}
 
 	visited := visitedFlags(fs)
@@ -148,13 +130,13 @@ func parseOptions(args []string) (options, bool, error) {
 	applyDefaults(&opts, visited)
 
 	if err := validateOptions(&opts, visited); err != nil {
-		return options{}, false, err
+		return Options{}, false, err
 	}
 
 	return opts, false, nil
 }
 
-func validateOptions(opts *options, visited map[string]bool) error {
+func validateOptions(opts *Options, visited map[string]bool) error {
 	if opts.Count < 1 {
 		return errors.New("-count or -n is required and must be 1 or greater")
 	}
@@ -163,11 +145,11 @@ func validateOptions(opts *options, visited map[string]bool) error {
 		return errors.New("-o must not be empty")
 	}
 
-	if opts.Type == kindUnknown {
+	if opts.Type == KindUnknown {
 		return errors.New("-type is required")
 	}
 
-	if opts.Type == kindDirectory {
+	if opts.Type == KindDirectory {
 		if visited["size"] {
 			return errors.New("-size cannot be used when -type=dir")
 		}
@@ -176,23 +158,32 @@ func validateOptions(opts *options, visited map[string]bool) error {
 		}
 	}
 
-	if opts.Content != "" && opts.ContentMode != contentModeTemplate {
+	if opts.Content != "" && opts.ContentMode != ContentModeTemplate {
 		return errors.New("-content requires -mode=template")
 	}
 
-	if opts.ContentMode == contentModeTemplate && strings.TrimSpace(opts.Content) == "" {
+	if opts.ContentMode == ContentModeTemplate && strings.TrimSpace(opts.Content) == "" {
 		return errors.New("-content is required when -mode=template")
+	}
+
+	if opts.Type == KindImage {
+		if visited["content"] || visited["c"] {
+			return errors.New("-content cannot be used when -type=image")
+		}
+		if opts.ContentMode != ContentModeRandom {
+			return errors.New("-type=image only supports -mode=random")
+		}
 	}
 
 	return nil
 }
 
-func applyDefaults(opts *options, visited map[string]bool) {
-	if opts.Content != "" && opts.ContentMode == contentModeUnset {
-		opts.ContentMode = contentModeTemplate
+func applyDefaults(opts *Options, visited map[string]bool) {
+	if opts.Content != "" && opts.ContentMode == ContentModeUnset {
+		opts.ContentMode = ContentModeTemplate
 	}
 
-	if opts.Type == kindUnknown {
+	if opts.Type == KindUnknown {
 		return
 	}
 
@@ -201,20 +192,20 @@ func applyDefaults(opts *options, visited map[string]bool) {
 	}
 
 	switch opts.Type {
-	case kindText:
+	case KindText:
 		opts.Name = "text-%03d.txt"
-	case kindImage:
+	case KindImage:
 		opts.Name = "image-%03d.png"
-	case kindDirectory:
+	case KindDirectory:
 		opts.Name = "dir-%03d"
 	}
 
 applyModeAndSize:
-	if opts.Type == kindDirectory {
+	if opts.Type == KindDirectory {
 		return
 	}
 
-	if opts.ContentMode == contentModeUnset {
+	if opts.ContentMode == ContentModeUnset {
 		opts.ContentMode = defaultContentModeForType(opts.Type)
 	}
 
@@ -223,7 +214,7 @@ applyModeAndSize:
 	}
 }
 
-func printUsage(w io.Writer) {
+func PrintUsage(w io.Writer) {
 	fmt.Fprintf(w, "%s - ダミーファイルを作成するコマンド\n\n", commandName())
 	fmt.Fprintln(w, "Usage:")
 	fmt.Fprintf(w, "  %s [options]\n\n", commandName())
@@ -319,22 +310,22 @@ func sizeUnitMultiplier(unit string) (int64, bool) {
 	}
 }
 
-func defaultContentModeForType(kind fileKind) contentMode {
+func defaultContentModeForType(kind FileKind) ContentMode {
 	switch kind {
-	case kindText:
-		return contentModeLorem
-	case kindImage:
-		return contentModeRandom
+	case KindText:
+		return ContentModeLorem
+	case KindImage:
+		return ContentModeRandom
 	default:
-		return contentModeUnset
+		return ContentModeUnset
 	}
 }
 
-func defaultSizeForType(kind fileKind) int64 {
+func defaultSizeForType(kind FileKind) int64 {
 	switch kind {
-	case kindText:
+	case KindText:
 		return 1000
-	case kindImage:
+	case KindImage:
 		return 256 * 1000
 	default:
 		return 0
