@@ -41,7 +41,7 @@ func TestGenerateTextTemplateExactSize(t *testing.T) {
 		Type:        cli.KindText,
 		Count:       1,
 		Name:        "memo-%02d.txt",
-		SizeBytes:   16,
+		SizeBytes:   17,
 		ContentMode: cli.ContentModeTemplate,
 		Content:     "dummy-%02d",
 		OutputDir:   tmpDir,
@@ -55,10 +55,10 @@ func TestGenerateTextTemplateExactSize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() error = %v", err)
 	}
-	if len(data) != 16 {
-		t.Fatalf("len(data) = %d, want 16", len(data))
+	if len(data) != 17 {
+		t.Fatalf("len(data) = %d, want 17", len(data))
 	}
-	if string(data) != "dummy-01dummy-01" {
+	if string(data) != "dummy-01\ndummy-01" {
 		t.Fatalf("data = %q", data)
 	}
 }

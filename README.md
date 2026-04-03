@@ -52,7 +52,7 @@ Options:
   -m string
         Alias for -mode
   -content string
-        Content string for -mode=template. Sets -mode=template automatically when provided
+        Content string for -mode=template. Repeats with newline separators and sets -mode=template automatically when provided
   -c string
         Alias for -content
   -o string
@@ -95,4 +95,4 @@ mkdmy -type dir -count 5 -name 'batch-%02d'
 
 - `-size` is not available for `-type=dir`
 - `-type=png` supports `-mode=index` and `-mode=random`
-- `-content` requires `-mode=template`, and setting `-content` enables template mode automatically
+- `-content` requires `-mode=template`, repeats with newline separators, and enables template mode automatically

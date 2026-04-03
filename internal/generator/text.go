@@ -54,7 +54,7 @@ func writeTextContent(writer *bufio.Writer, opts cli.Options, index int) error {
 
 	switch opts.ContentMode {
 	case cli.ContentModeTemplate:
-		return writeRepeatedText(writer, []byte(fmt.Sprintf(opts.Content, index)), remaining)
+		return writeTemplateText(writer, []byte(fmt.Sprintf(opts.Content, index)), remaining)
 	case cli.ContentModeLorem:
 		return writeRepeatedText(writer, []byte(loremText), remaining)
 	case cli.ContentModeRandom:
@@ -79,6 +79,40 @@ func writeRepeatedText(writer *bufio.Writer, pattern []byte, size int64) error {
 			return err
 		}
 		remaining -= int64(len(chunk))
+	}
+
+	return nil
+}
+
+func writeTemplateText(writer *bufio.Writer, content []byte, size int64) error {
+	if len(content) == 0 {
+		return fmt.Errorf("content pattern must not be empty")
+	}
+
+	remaining := size
+	separator := []byte("\n")
+
+	for remaining > 0 {
+		chunk := content
+		if int64(len(chunk)) > remaining {
+			chunk = chunk[:remaining]
+		}
+		if _, err := writer.Write(chunk); err != nil {
+			return err
+		}
+		remaining -= int64(len(chunk))
+		if remaining == 0 || len(chunk) < len(content) {
+			break
+		}
+
+		newline := separator
+		if int64(len(newline)) > remaining {
+			newline = newline[:remaining]
+		}
+		if _, err := writer.Write(newline); err != nil {
+			return err
+		}
+		remaining -= int64(len(newline))
 	}
 
 	return nil
