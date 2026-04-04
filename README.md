@@ -5,7 +5,7 @@
 ## Features
 
 - Generate text files with exact byte sizes
-- Generate PNG files with centered sequential or template labels
+- Generate PNG files with centered template labels
 - Generate directories in bulk
 - Use sequential names with `fmt.Sprintf`-style templates
 
@@ -47,8 +47,8 @@ Options:
         Name template. fmt.Sprintf-style numbering is supported
         Default by type: text=text-%03d.txt, png=image-%03d.png, dir=dir-%03d
   -mode string
-        Content mode: template, random, index, lorem
-        Default by type: text=lorem, png=index
+        Content mode: template, random
+        Default by type: text=template, png=template
   -m string
         Alias for -mode
   -content string
@@ -67,16 +67,16 @@ Create one text file with default settings:
 mkdmy -type text -n 1
 ```
 
-Create ten 4KB lorem text files:
+Create ten 4KB template text files:
 
 ```bash
-mkdmy -type text -n 10 -size 4KB -name 'note-%03d.txt' -mode lorem
+mkdmy -type text -n 10 -size 4KB -name 'note-%03d.txt' -content 'note-%03d'
 ```
 
 Create three labeled PNG files:
 
 ```bash
-mkdmy -type png -count 3 -name 'img-%02d.png' -mode index
+mkdmy -type png -count 3 -name 'img-%02d.png'
 ```
 
 Create PNG files with formatted labels:
@@ -100,5 +100,7 @@ mkdmy -type dir -count 5 -name 'batch-%02d'
 ## Notes
 
 - `-size` is not available for `-type=dir`
-- `-type=png` supports `-mode=index`, `-mode=random`, and `-mode=template`
-- `-content` requires `-mode=template`, repeats with newline separators, and enables template mode automatically
+- `-type=text` and `-type=png` support `-mode=template` and `-mode=random`
+- `text` defaults to template content `dummy-%d` when `-content` is omitted
+- `png` defaults to template content `%d` when `-content` is omitted
+- `-content` repeats with newline separators for text output and enables template mode automatically

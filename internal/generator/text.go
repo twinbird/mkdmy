@@ -9,7 +9,6 @@ import (
 	"github.com/twinbird/mkdmy/internal/cli"
 )
 
-const loremText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
 const randomAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func createTextFile(path string, opts cli.Options, index int) error {
@@ -55,8 +54,6 @@ func writeTextContent(writer *bufio.Writer, opts cli.Options, index int) error {
 	switch opts.ContentMode {
 	case cli.ContentModeTemplate:
 		return writeTemplateText(writer, []byte(fmt.Sprintf(opts.Content, index)), remaining)
-	case cli.ContentModeLorem:
-		return writeRepeatedText(writer, []byte(loremText), remaining)
 	case cli.ContentModeRandom:
 		return writeRandomText(writer, remaining)
 	default:

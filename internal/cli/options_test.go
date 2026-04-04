@@ -23,8 +23,11 @@ func TestParseAppliesDefaultsForText(t *testing.T) {
 	if opts.SizeBytes != 1000 {
 		t.Fatalf("SizeBytes = %d, want 1000", opts.SizeBytes)
 	}
-	if opts.ContentMode != ContentModeLorem {
-		t.Fatalf("ContentMode = %q, want %q", opts.ContentMode, ContentModeLorem)
+	if opts.ContentMode != ContentModeTemplate {
+		t.Fatalf("ContentMode = %q, want %q", opts.ContentMode, ContentModeTemplate)
+	}
+	if opts.Content != "dummy-%d" {
+		t.Fatalf("Content = %q, want %q", opts.Content, "dummy-%d")
 	}
 }
 
@@ -45,8 +48,11 @@ func TestParseAppliesDefaultsForPNG(t *testing.T) {
 	if opts.SizeBytes != 256000 {
 		t.Fatalf("SizeBytes = %d, want 256000", opts.SizeBytes)
 	}
-	if opts.ContentMode != ContentModeIndex {
-		t.Fatalf("ContentMode = %q, want %q", opts.ContentMode, ContentModeIndex)
+	if opts.ContentMode != ContentModeTemplate {
+		t.Fatalf("ContentMode = %q, want %q", opts.ContentMode, ContentModeTemplate)
+	}
+	if opts.Content != "%d" {
+		t.Fatalf("Content = %q, want %q", opts.Content, "%d")
 	}
 }
 
@@ -77,7 +83,14 @@ func TestParseRejectsDirSize(t *testing.T) {
 	}
 }
 
-func TestParseRejectsImageLorem(t *testing.T) {
+func TestParseAllowsPNGTemplateWithoutContent(t *testing.T) {
+	_, _, err := Parse([]string{"-type", "png", "-n", "1", "-mode", "template"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+}
+
+func TestParseRejectsRemovedMode(t *testing.T) {
 	_, _, err := Parse([]string{"-type", "png", "-n", "1", "-mode", "lorem"})
 	if err == nil {
 		t.Fatal("Parse() error = nil, want error")
@@ -123,11 +136,6 @@ func TestParseRejectsInvalidInputs(t *testing.T) {
 			wantErr: "-o must not be empty",
 		},
 		{
-			name:    "template mode without content",
-			args:    []string{"-type", "text", "-n", "1", "-mode", "template"},
-			wantErr: "-content is required when -mode=template",
-		},
-		{
 			name:    "dir with content option",
 			args:    []string{"-type", "dir", "-n", "1", "-content", "dummy"},
 			wantErr: "content options cannot be used when -type=dir",
@@ -135,7 +143,7 @@ func TestParseRejectsInvalidInputs(t *testing.T) {
 		{
 			name:    "png with unsupported mode",
 			args:    []string{"-type", "png", "-n", "1", "-mode", "lorem"},
-			wantErr: "-type=png only supports -mode=random, -mode=index, or -mode=template",
+			wantErr: `invalid -mode "lorem"`,
 		},
 		{
 			name:    "unexpected positional args",
@@ -208,7 +216,7 @@ func TestPrintUsageIncludesKeyLines(t *testing.T) {
 		"mkdmy - Generate dummy files and directories",
 		"Output kind: text, png, dir (required)",
 		"mkdmy -type text -n 1",
-		"mkdmy -type png -count 3 -name 'img-%02d.png' -mode index",
+		"mkdmy -type png -count 3 -name 'img-%02d.png'",
 		"mkdmy -type png -count 3 -name 'card-%02d.png' -content 'page-%02d'",
 	} {
 		if !strings.Contains(buf.String(), want) {

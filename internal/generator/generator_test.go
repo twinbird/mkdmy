@@ -70,7 +70,7 @@ func TestGeneratePNGProducesPNG(t *testing.T) {
 		Count:       1,
 		Name:        "image-%02d.png",
 		SizeBytes:   6000,
-		ContentMode: cli.ContentModeIndex,
+		ContentMode: cli.ContentModeTemplate,
 		OutputDir:   tmpDir,
 	}
 
@@ -94,33 +94,6 @@ func TestGeneratePNGProducesPNG(t *testing.T) {
 	sizeDelta := absInt64(int64(len(data)) - opts.SizeBytes)
 	if sizeDelta > opts.SizeBytes/2 {
 		t.Fatalf("image size delta = %d, want <= %d", sizeDelta, opts.SizeBytes/2)
-	}
-}
-
-func TestGenerateTextLoremExactSize(t *testing.T) {
-	tmpDir := t.TempDir()
-	opts := cli.Options{
-		Type:        cli.KindText,
-		Count:       1,
-		Name:        "lorem-%02d.txt",
-		SizeBytes:   int64(len(loremText) + 5),
-		ContentMode: cli.ContentModeLorem,
-		OutputDir:   tmpDir,
-	}
-
-	if err := Generate(opts); err != nil {
-		t.Fatalf("Generate() error = %v", err)
-	}
-
-	data, err := os.ReadFile(filepath.Join(tmpDir, "lorem-01.txt"))
-	if err != nil {
-		t.Fatalf("ReadFile() error = %v", err)
-	}
-	if len(data) != int(opts.SizeBytes) {
-		t.Fatalf("len(data) = %d, want %d", len(data), opts.SizeBytes)
-	}
-	if !strings.HasPrefix(string(data), loremText) {
-		t.Fatalf("data prefix = %q, want %q", string(data[:len(loremText)]), loremText)
 	}
 }
 
@@ -160,7 +133,8 @@ func TestGenerateTextMultipleFilesWithSequentialNames(t *testing.T) {
 		Count:       3,
 		Name:        "note-%02d.txt",
 		SizeBytes:   8,
-		ContentMode: cli.ContentModeLorem,
+		ContentMode: cli.ContentModeTemplate,
+		Content:     "note-%02d",
 		OutputDir:   tmpDir,
 	}
 
@@ -182,7 +156,8 @@ func TestGenerateTextWithoutFormatCollides(t *testing.T) {
 		Count:       2,
 		Name:        "same.txt",
 		SizeBytes:   8,
-		ContentMode: cli.ContentModeLorem,
+		ContentMode: cli.ContentModeTemplate,
+		Content:     "same-%02d",
 		OutputDir:   tmpDir,
 	}
 
@@ -207,7 +182,8 @@ func TestGenerateRejectsExistingFile(t *testing.T) {
 		Count:       1,
 		Name:        "text-%02d.txt",
 		SizeBytes:   8,
-		ContentMode: cli.ContentModeLorem,
+		ContentMode: cli.ContentModeTemplate,
+		Content:     "text-%02d",
 		OutputDir:   tmpDir,
 	}
 
@@ -250,7 +226,7 @@ func TestGeneratePNGRejectsUnsupportedMode(t *testing.T) {
 		Count:       1,
 		Name:        "image-%02d.png",
 		SizeBytes:   2000,
-		ContentMode: cli.ContentModeLorem,
+		ContentMode: cli.ContentMode("lorem"),
 		OutputDir:   tmpDir,
 	}
 
@@ -263,14 +239,14 @@ func TestGeneratePNGRejectsUnsupportedMode(t *testing.T) {
 	}
 }
 
-func TestGeneratePNGIndexModeUsesSequentialLabels(t *testing.T) {
+func TestGeneratePNGDefaultTemplateUsesSequentialLabels(t *testing.T) {
 	tmpDir := t.TempDir()
 	opts := cli.Options{
 		Type:        cli.KindPNG,
 		Count:       2,
 		Name:        "image-%02d.png",
 		SizeBytes:   6000,
-		ContentMode: cli.ContentModeIndex,
+		ContentMode: cli.ContentModeTemplate,
 		OutputDir:   tmpDir,
 	}
 
@@ -329,7 +305,7 @@ func TestGeneratePNGTinySizeStillProducesPNG(t *testing.T) {
 		Count:       1,
 		Name:        "tiny-%02d.png",
 		SizeBytes:   1,
-		ContentMode: cli.ContentModeIndex,
+		ContentMode: cli.ContentModeTemplate,
 		OutputDir:   tmpDir,
 	}
 

@@ -10,7 +10,6 @@ import (
 	"image/png"
 	"math"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -37,10 +36,8 @@ func createImageFile(path string, opts cli.Options, index int) error {
 	switch opts.ContentMode {
 	case cli.ContentModeRandom:
 		data, err = buildRandomPNG(opts.SizeBytes)
-	case cli.ContentModeIndex:
-		data, err = buildLabeledPNG(opts.SizeBytes, sequenceLabel(filepath.Base(path), index))
 	case cli.ContentModeTemplate:
-		data, err = buildLabeledPNG(opts.SizeBytes, fmt.Sprintf(opts.Content, index))
+		data, err = buildLabeledPNG(opts.SizeBytes, templateLabel(opts.Content, index))
 	default:
 		return fmt.Errorf("unsupported png mode %q", opts.ContentMode)
 	}
@@ -268,33 +265,11 @@ func loadLabelFont() (*opentype.Font, error) {
 	return labelFont, labelFontErr
 }
 
-func sequenceLabel(fileName string, index int) string {
-	name := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-	label := strconv.Itoa(index)
-	best := ""
-
-	start := -1
-	for i := 0; i < len(name); i++ {
-		if name[i] >= '0' && name[i] <= '9' {
-			if start == -1 {
-				start = i
-			}
-			continue
-		}
-
-		if start != -1 {
-			best = chooseLabelCandidate(name[start:i], index, best)
-			start = -1
-		}
+func templateLabel(content string, index int) string {
+	if strings.TrimSpace(content) != "" {
+		return fmt.Sprintf(content, index)
 	}
-	if start != -1 {
-		best = chooseLabelCandidate(name[start:], index, best)
-	}
-
-	if best != "" {
-		return best
-	}
-	return label
+	return strconv.Itoa(index)
 }
 
 func splitLabelLines(label string) []string {
@@ -307,17 +282,6 @@ func splitLabelLines(label string) []string {
 		return []string{""}
 	}
 	return lines
-}
-
-func chooseLabelCandidate(candidate string, index int, best string) string {
-	value, err := strconv.Atoi(candidate)
-	if err != nil || value != index {
-		return best
-	}
-	if len(candidate) > len(best) {
-		return candidate
-	}
-	return best
 }
 
 func estimateImageSide(targetSize int64) int {
