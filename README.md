@@ -5,7 +5,7 @@
 ## Features
 
 - Generate text files with exact byte sizes
-- Generate PNG files with centered sequential labels
+- Generate PNG files with centered sequential or template labels
 - Generate directories in bulk
 - Use sequential names with `fmt.Sprintf`-style templates
 
@@ -52,7 +52,7 @@ Options:
   -m string
         Alias for -mode
   -content string
-        Content string for -mode=template. Repeats with newline separators and sets -mode=template automatically when provided
+        Content string for -mode=template. Text output repeats with newline separators; png output draws the formatted string centered
   -c string
         Alias for -content
   -o string
@@ -79,6 +79,12 @@ Create three labeled PNG files:
 mkdmy -type png -count 3 -name 'img-%02d.png' -mode index
 ```
 
+Create PNG files with formatted labels:
+
+```bash
+mkdmy -type png -count 3 -name 'card-%02d.png' -content 'page-%02d'
+```
+
 Create template-based text files:
 
 ```bash
@@ -94,5 +100,5 @@ mkdmy -type dir -count 5 -name 'batch-%02d'
 ## Notes
 
 - `-size` is not available for `-type=dir`
-- `-type=png` supports `-mode=index` and `-mode=random`
+- `-type=png` supports `-mode=index`, `-mode=random`, and `-mode=template`
 - `-content` requires `-mode=template`, repeats with newline separators, and enables template mode automatically

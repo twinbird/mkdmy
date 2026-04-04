@@ -292,6 +292,36 @@ func TestGeneratePNGIndexModeUsesSequentialLabels(t *testing.T) {
 	}
 }
 
+func TestGeneratePNGTemplateModeFormatsContentWithIndex(t *testing.T) {
+	tmpDir := t.TempDir()
+	opts := cli.Options{
+		Type:        cli.KindPNG,
+		Count:       2,
+		Name:        "card-%02d.png",
+		SizeBytes:   6000,
+		ContentMode: cli.ContentModeTemplate,
+		Content:     "page-%02d",
+		OutputDir:   tmpDir,
+	}
+
+	if err := Generate(opts); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	first, err := os.ReadFile(filepath.Join(tmpDir, "card-01.png"))
+	if err != nil {
+		t.Fatalf("ReadFile(first) error = %v", err)
+	}
+	second, err := os.ReadFile(filepath.Join(tmpDir, "card-02.png"))
+	if err != nil {
+		t.Fatalf("ReadFile(second) error = %v", err)
+	}
+
+	if bytes.Equal(first, second) {
+		t.Fatal("generated PNG template files are identical, want different formatted labels")
+	}
+}
+
 func TestGeneratePNGTinySizeStillProducesPNG(t *testing.T) {
 	tmpDir := t.TempDir()
 	opts := cli.Options{

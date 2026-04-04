@@ -160,11 +160,8 @@ func validateOptions(opts *Options, visited map[string]bool) error {
 	}
 
 	if opts.Type == KindPNG {
-		if visited["content"] || visited["c"] {
-			return errors.New("-content cannot be used when -type=png")
-		}
-		if opts.ContentMode != ContentModeRandom && opts.ContentMode != ContentModeIndex {
-			return errors.New("-type=png only supports -mode=random or -mode=index")
+		if opts.ContentMode != ContentModeRandom && opts.ContentMode != ContentModeIndex && opts.ContentMode != ContentModeTemplate {
+			return errors.New("-type=png only supports -mode=random, -mode=index, or -mode=template")
 		}
 	}
 
@@ -248,6 +245,7 @@ func PrintUsage(w io.Writer) {
 	fmt.Fprintf(w, "  %s -type text -n 1\n", commandName())
 	fmt.Fprintf(w, "  %s -type text -n 10 -size 4KB -name 'note-%%03d.txt' -mode lorem\n", commandName())
 	fmt.Fprintf(w, "  %s -type png -count 3 -name 'img-%%02d.png' -mode index\n", commandName())
+	fmt.Fprintf(w, "  %s -type png -count 3 -name 'card-%%02d.png' -content 'page-%%02d'\n", commandName())
 	fmt.Fprintf(w, "  %s -type text -n 3 -name 'memo-%%02d.txt' -content 'dummy-%%02d'\n", commandName())
 	fmt.Fprintf(w, "  %s -type dir -count 5 -name 'batch-%%02d'\n", commandName())
 }

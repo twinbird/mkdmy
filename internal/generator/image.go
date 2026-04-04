@@ -38,7 +38,9 @@ func createImageFile(path string, opts cli.Options, index int) error {
 	case cli.ContentModeRandom:
 		data, err = buildRandomPNG(opts.SizeBytes)
 	case cli.ContentModeIndex:
-		data, err = buildIndexedPNG(opts.SizeBytes, sequenceLabel(filepath.Base(path), index))
+		data, err = buildLabeledPNG(opts.SizeBytes, sequenceLabel(filepath.Base(path), index))
+	case cli.ContentModeTemplate:
+		data, err = buildLabeledPNG(opts.SizeBytes, fmt.Sprintf(opts.Content, index))
 	default:
 		return fmt.Errorf("unsupported png mode %q", opts.ContentMode)
 	}
@@ -66,9 +68,9 @@ func buildRandomPNG(targetSize int64) ([]byte, error) {
 	return buildPNG(targetSize, encodeRandomPNG)
 }
 
-func buildIndexedPNG(targetSize int64, label string) ([]byte, error) {
+func buildLabeledPNG(targetSize int64, label string) ([]byte, error) {
 	return buildPNG(targetSize, func(side int) ([]byte, error) {
-		return encodeIndexedPNG(side, label)
+		return encodeLabeledPNG(side, label)
 	})
 }
 
@@ -149,11 +151,12 @@ func encodeRandomPNG(side int) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func encodeIndexedPNG(side int, label string) ([]byte, error) {
+func encodeLabeledPNG(side int, label string) ([]byte, error) {
 	img := image.NewNRGBA(image.Rect(0, 0, side, side))
 	imagedraw.Draw(img, img.Bounds(), image.NewUniform(color.White), image.Point{}, imagedraw.Src)
 
-	face, width, textHeight, ascent, err := newLabelFace(side, label)
+	lines := splitLabelLines(label)
+	face, lineHeight, err := newLabelFace(side, lines)
 	if err != nil {
 		return nil, err
 	}
@@ -161,16 +164,24 @@ func encodeIndexedPNG(side int, label string) ([]byte, error) {
 		defer closer.Close()
 	}
 
-	x := (side - width) / 2
-	y := (side-textHeight)/2 + ascent
-
 	drawer := font.Drawer{
 		Dst:  img,
 		Src:  image.NewUniform(color.Black),
 		Face: face,
-		Dot:  fixed.P(x, y),
 	}
-	drawer.DrawString(label)
+
+	metrics := face.Metrics()
+	ascent := metrics.Ascent.Ceil()
+	blockHeight := lineHeight * len(lines)
+	y := (side-blockHeight)/2 + ascent
+
+	for _, line := range lines {
+		width := drawer.MeasureString(line).Ceil()
+		x := (side - width) / 2
+		drawer.Dot = fixed.P(x, y)
+		drawer.DrawString(line)
+		y += lineHeight
+	}
 
 	var buf bytes.Buffer
 	encoder := png.Encoder{CompressionLevel: png.NoCompression}
@@ -181,10 +192,10 @@ func encodeIndexedPNG(side int, label string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func newLabelFace(side int, label string) (font.Face, int, int, int, error) {
+func newLabelFace(side int, lines []string) (font.Face, int, error) {
 	ttf, err := loadLabelFont()
 	if err != nil {
-		return nil, 0, 0, 0, err
+		return nil, 0, err
 	}
 
 	minSize := 8.0
@@ -198,17 +209,15 @@ func newLabelFace(side int, label string) (font.Face, int, int, int, error) {
 			Hinting: font.HintingFull,
 		})
 		if err != nil {
-			return nil, 0, 0, 0, err
+			return nil, 0, err
 		}
 
-		drawer := font.Drawer{Face: face}
-		width := drawer.MeasureString(label).Ceil()
 		metrics := face.Metrics()
-		textHeight := (metrics.Ascent + metrics.Descent).Ceil()
+		lineHeight := (metrics.Ascent + metrics.Descent).Ceil()
+		blockHeight := lineHeight * len(lines)
 
-		if width <= int(float64(side)*0.8) && textHeight <= int(float64(side)*0.6) {
-			ascent := metrics.Ascent.Ceil()
-			return face, width, textHeight, ascent, nil
+		if labelLinesFit(face, lines, side, blockHeight) {
+			return face, lineHeight, nil
 		}
 
 		if closer, ok := face.(interface{ Close() error }); ok {
@@ -227,16 +236,29 @@ func newLabelFace(side int, label string) (font.Face, int, int, int, error) {
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
-		return nil, 0, 0, 0, err
+		return nil, 0, err
+	}
+
+	metrics := face.Metrics()
+	lineHeight := (metrics.Ascent + metrics.Descent).Ceil()
+
+	return face, lineHeight, nil
+}
+
+func labelLinesFit(face font.Face, lines []string, side int, blockHeight int) bool {
+	if blockHeight > int(float64(side)*0.75) {
+		return false
 	}
 
 	drawer := font.Drawer{Face: face}
-	width := drawer.MeasureString(label).Ceil()
-	metrics := face.Metrics()
-	textHeight := (metrics.Ascent + metrics.Descent).Ceil()
-	ascent := metrics.Ascent.Ceil()
+	for _, line := range lines {
+		width := drawer.MeasureString(line).Ceil()
+		if width > int(float64(side)*0.8) {
+			return false
+		}
+	}
 
-	return face, width, textHeight, ascent, nil
+	return true
 }
 
 func loadLabelFont() (*opentype.Font, error) {
@@ -273,6 +295,18 @@ func sequenceLabel(fileName string, index int) string {
 		return best
 	}
 	return label
+}
+
+func splitLabelLines(label string) []string {
+	parts := strings.Split(label, "\n")
+	lines := make([]string, 0, len(parts))
+	for _, part := range parts {
+		lines = append(lines, part)
+	}
+	if len(lines) == 0 {
+		return []string{""}
+	}
+	return lines
 }
 
 func chooseLabelCandidate(candidate string, index int, best string) string {

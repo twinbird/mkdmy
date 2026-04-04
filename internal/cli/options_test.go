@@ -60,6 +60,16 @@ func TestParseAutoSetsTemplateMode(t *testing.T) {
 	}
 }
 
+func TestParseAutoSetsTemplateModeForPNG(t *testing.T) {
+	opts, _, err := Parse([]string{"-type", "png", "-n", "1", "-content", "page-%02d"})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if opts.ContentMode != ContentModeTemplate {
+		t.Fatalf("ContentMode = %q, want %q", opts.ContentMode, ContentModeTemplate)
+	}
+}
+
 func TestParseRejectsDirSize(t *testing.T) {
 	_, _, err := Parse([]string{"-type", "dir", "-n", "1", "-size", "1KB"})
 	if err == nil {
@@ -123,9 +133,9 @@ func TestParseRejectsInvalidInputs(t *testing.T) {
 			wantErr: "content options cannot be used when -type=dir",
 		},
 		{
-			name:    "png with content option",
-			args:    []string{"-type", "png", "-n", "1", "-content", "dummy", "-mode", "random"},
-			wantErr: "-content cannot be used when -type=png",
+			name:    "png with unsupported mode",
+			args:    []string{"-type", "png", "-n", "1", "-mode", "lorem"},
+			wantErr: "-type=png only supports -mode=random, -mode=index, or -mode=template",
 		},
 		{
 			name:    "unexpected positional args",
@@ -199,6 +209,7 @@ func TestPrintUsageIncludesKeyLines(t *testing.T) {
 		"Output kind: text, png, dir (required)",
 		"mkdmy -type text -n 1",
 		"mkdmy -type png -count 3 -name 'img-%02d.png' -mode index",
+		"mkdmy -type png -count 3 -name 'card-%02d.png' -content 'page-%02d'",
 	} {
 		if !strings.Contains(buf.String(), want) {
 			t.Fatalf("PrintUsage() missing %q", want)
