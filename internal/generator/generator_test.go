@@ -149,6 +149,44 @@ func TestGenerateTextMultipleFilesWithSequentialNames(t *testing.T) {
 	}
 }
 
+func TestGenerateTextManyFilesPreserveNameAndContentMapping(t *testing.T) {
+	tmpDir := t.TempDir()
+	opts := cli.Options{
+		Type:        cli.KindText,
+		Count:       50,
+		Name:        "bulk-%03d.txt",
+		SizeBytes:   7,
+		ContentMode: cli.ContentModeTemplate,
+		Content:     "%03d-%03[1]d",
+		OutputDir:   tmpDir,
+	}
+
+	if err := Generate(opts); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	entries, err := os.ReadDir(tmpDir)
+	if err != nil {
+		t.Fatalf("ReadDir() error = %v", err)
+	}
+	if len(entries) != opts.Count {
+		t.Fatalf("len(entries) = %d, want %d", len(entries), opts.Count)
+	}
+
+	for index := 1; index <= opts.Count; index++ {
+		name := renderName(opts.Name, index)
+		data, err := os.ReadFile(filepath.Join(tmpDir, name))
+		if err != nil {
+			t.Fatalf("ReadFile(%q) error = %v", name, err)
+		}
+
+		want := []byte(renderName(opts.Content, index))
+		if !bytes.Equal(data, want) {
+			t.Fatalf("%q content = %q, want %q", name, data, want)
+		}
+	}
+}
+
 func TestGenerateTextWithoutFormatCollides(t *testing.T) {
 	tmpDir := t.TempDir()
 	opts := cli.Options{
