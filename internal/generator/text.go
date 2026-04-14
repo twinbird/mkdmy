@@ -12,37 +12,12 @@ import (
 const randomAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func createTextFile(path string, opts cli.Options, index int) error {
-	if err := ensureParentDir(path); err != nil {
-		return fmt.Errorf("prepare parent dir: %w", err)
-	}
-
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	file, err := reserveOutputFile(path)
 	if err != nil {
 		return err
 	}
 
-	writer := bufio.NewWriter(file)
-	if err := writeTextContent(writer, opts, index); err != nil {
-		file.Close()
-		return err
-	}
-	if err := writer.Flush(); err != nil {
-		file.Close()
-		return err
-	}
-	if err := file.Close(); err != nil {
-		return err
-	}
-
-	info, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
-	if info.Size() != opts.SizeBytes {
-		return fmt.Errorf("unexpected size: got %d bytes, want %d bytes", info.Size(), opts.SizeBytes)
-	}
-
-	return nil
+	return writeTextFile(file, path, opts, index)
 }
 
 func writeTextContent(writer *bufio.Writer, opts cli.Options, index int) error {
@@ -139,6 +114,31 @@ func writeRandomText(writer *bufio.Writer, size int64) error {
 		}
 
 		remaining -= int64(current)
+	}
+
+	return nil
+}
+
+func writeTextFile(file *os.File, path string, opts cli.Options, index int) error {
+	writer := bufio.NewWriter(file)
+	if err := writeTextContent(writer, opts, index); err != nil {
+		file.Close()
+		return err
+	}
+	if err := writer.Flush(); err != nil {
+		file.Close()
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	if info.Size() != opts.SizeBytes {
+		return fmt.Errorf("unexpected size: got %d bytes, want %d bytes", info.Size(), opts.SizeBytes)
 	}
 
 	return nil

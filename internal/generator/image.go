@@ -28,6 +28,15 @@ var (
 )
 
 func createImageFile(path string, opts cli.Options, index int) error {
+	file, err := reserveOutputFile(path)
+	if err != nil {
+		return err
+	}
+
+	return writeImageFile(file, opts, index)
+}
+
+func writeImageFile(file *os.File, opts cli.Options, index int) error {
 	var (
 		data []byte
 		err  error
@@ -41,15 +50,8 @@ func createImageFile(path string, opts cli.Options, index int) error {
 	default:
 		return fmt.Errorf("unsupported png mode %q", opts.ContentMode)
 	}
-	if err := ensureParentDir(path); err != nil {
-		return fmt.Errorf("prepare parent dir: %w", err)
-	}
 	if err != nil {
-		return err
-	}
-
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
-	if err != nil {
+		file.Close()
 		return err
 	}
 	defer file.Close()

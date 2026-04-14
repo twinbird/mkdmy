@@ -21,3 +21,16 @@ func ensureParentDir(path string) error {
 	}
 	return os.MkdirAll(parent, 0o755)
 }
+
+func reserveOutputFile(path string) (*os.File, error) {
+	if err := ensureParentDir(path); err != nil {
+		return nil, fmt.Errorf("prepare parent dir: %w", err)
+	}
+
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
+}
